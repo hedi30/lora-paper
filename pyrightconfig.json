@@ -1,0 +1,9 @@
+{
+    "typeCheckingMode": "off",
+    "reportMethodNotDefined": false,
+    "reportAttributeAccessIssue": false,
+    "reportUnknownMemberType": false,
+    "reportUnknownVariableType": false,
+    "reportUntypedFunctionDecorator": false,
+    "reportMissingTypeStubs": false
+}

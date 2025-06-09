@@ -1,0 +1,17 @@
+// Folder-specific settings
+//
+// For a full list of overridable settings, and general information on folder-specific settings,
+// see the documentation: https://zed.dev/docs/configuring-zed#settings-files
+{
+    "venv": "pytorch_env",
+    "venv_path": "/home/hedi/.conda/envs",
+
+    "languages": {
+        "Python": {
+            "enable_language_server": true,
+            "format_on_save": "on",
+            "tab_size": 4
+        }
+    },
+    "show_completions_on_input": true
+}

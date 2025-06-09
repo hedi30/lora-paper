@@ -32,8 +32,7 @@ model = AutoModelForSequenceClassification.from_pretrained(
 
 def count_parameters(model):
     total_params = sum(p.numel() for p in model.parameters())
-    trainable_params = sum(p.numel()
-                           for p in model.parameters() if p.requires_grad)
+    trainable_params = sum(p.numel() for p in model.parameters() if p.requires_grad)
     return {'Total': total_params, 'Trainable': trainable_params}
 
 
@@ -44,36 +43,32 @@ def compute_metrics(eval_preds):
     return metric.compute(predictions=predictions, references=labels)
 
 
-# lora config for roberta 
+# lora config for roberta
 lora_config = LoraConfig(
     r=8,
     lora_alpha=8,
-    task_type=TaskType.SEQ_CLS,
-    target_modules=["self.query", "self.key", "self.value"]
+    target_modules=["query","value"]
 )
-
-# paramaters before lora
 before_lora_count = count_parameters(model)
 print(f"Before LoRA:\n{before_lora_count}")
 
-# apply lora
 lora_model = get_peft_model(model, lora_config)
 
-# parameters after lora
 after_lora_count = count_parameters(lora_model)
 print(f"After LoRA:\n{after_lora_count}")
 
 training_args = TrainingArguments(
 "test-trainer",
-    evaluation_strategy="epoch",
-    num_train_epochs=30,       
+    evaluation_strategy="steps",
+    eval_steps=500,
+    num_train_epochs=30,
     per_device_train_batch_size=16,
-    per_device_eval_batch_size=16, 
-    learning_rate=4e-4,       
-    weight_decay=0.01,        
-    save_strategy="epoch",     
-    load_best_model_at_end=True, 
-    metric_for_best_model="f1",
+    per_device_eval_batch_size=16,
+    learning_rate=4e-4,
+    warmup_ratio=0.06,
+    lr_scheduler_type="linear",
+    save_strategy="no"
+
 )
 
 
@@ -92,9 +87,3 @@ trainer.train()
 
 eval_results = trainer.evaluate()
 print(eval_results)
-# print("\n==== EVALUATION RESULTS ====")
-# print(f"Accuracy: {eval_results['eval_accuracy']:.4f}")
-# print(f"F1 Score: {eval_results['eval_f1']:.4f}")
-# print(f"Precision: {eval_results['eval_precision']:.4f}")
-# print(f"Recall: {eval_results['eval_recall']:.4f}")
-# print(f"Loss: {eval_results['eval_loss']:.4f}")
