@@ -11,7 +11,7 @@ import numpy as np
 import os
 os.environ["WANDB_DISABLED"] = "true"
 
-raw_datasets = load_dataset("glue", "mrpc")
+raw_datasets = load_dataset("glue", "rte")
 checkpoint = "roberta-base"
 tokenizer = AutoTokenizer.from_pretrained(checkpoint)
 
@@ -38,7 +38,7 @@ def count_parameters(model):
 
 
 def compute_metrics(eval_preds):
-    metric = evaluate.load("glue", "mrpc")
+    metric = evaluate.load("glue", "rte")
     logits, labels = eval_preds
     predictions = np.argmax(logits, axis=-1)
     return metric.compute(predictions=predictions, references=labels)
@@ -59,13 +59,13 @@ after_lora_count = count_parameters(lora_model)
 print(f"After LoRA:\n{after_lora_count}")
 
 training_args = TrainingArguments(
-"test-trainer",
+"rte-trainer",
     #evaluation_strategy="steps",
     eval_steps=500,
-    num_train_epochs=30,
-    per_device_train_batch_size=16,
-    per_device_eval_batch_size=16,
-    learning_rate=4e-4,
+    num_train_epochs=80,
+    per_device_train_batch_size=32,
+    per_device_eval_batch_size=32,
+    learning_rate=5e-4,
     warmup_ratio=0.06,
     lr_scheduler_type="linear",
     save_strategy="no"
