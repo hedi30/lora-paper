@@ -99,7 +99,6 @@ wandb.log({
 
 training_args = TrainingArguments(
 "test-trainer",
-    evaluation_strategy="steps",
     eval_steps=500,
     num_train_epochs=30,
     per_device_train_batch_size=16,
