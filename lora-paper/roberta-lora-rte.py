@@ -11,6 +11,14 @@ import numpy as np
 import wandb
 import os
 
+
+from kaggle_secrets import UserSecretsClient
+user_secrets = UserSecretsClient()
+key = user_secrets.get_secret("wandb_key")
+
+os.environ["WANDB_API_KEY"] = key
+wandb.login()
+
 # Initialize wandb
 wandb.init(
     project="lora-roberta-rte",
