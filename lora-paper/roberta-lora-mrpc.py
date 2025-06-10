@@ -65,7 +65,9 @@ def compute_metrics(eval_preds):
     metric = evaluate.load("glue", "mrpc")
     logits, labels = eval_preds
     predictions = np.argmax(logits, axis=-1)
-    return metric.compute(predictions=predictions, references=labels)
+    results = metric.compute(predictions=predictions, references=labels)
+    print(f"Compute metrics results: {results}")
+    return results
 
 
 # lora config for roberta
@@ -127,13 +129,32 @@ trainer = Trainer(
 trainer.train()
 
 eval_results = trainer.evaluate()
-print(eval_results)
+print("Full eval_results:", eval_results)
+
+# Debug: print all available keys
+print("Available keys in eval_results:", eval_results.keys())
+
+# Extract metrics from eval_results with proper key names
+accuracy = None
+f1 = None
+loss = None
+
+# Try different possible key names for the metrics
+for key, value in eval_results.items():
+    if 'accuracy' in key.lower():
+        accuracy = value
+    elif 'f1' in key.lower():
+        f1 = value
+    elif 'loss' in key.lower():
+        loss = value
+
+print(f"Extracted metrics - Accuracy: {accuracy}, F1: {f1}, Loss: {loss}")
 
 # Log final evaluation results
 wandb.log({
-    "final_eval/accuracy": eval_results.get("eval_accuracy", 0),
-    "final_eval/f1": eval_results.get("eval_f1", 0),
-    "final_eval/loss": eval_results.get("eval_loss", 0)
+    "final_eval/accuracy": accuracy if accuracy is not None else 0,
+    "final_eval/f1": f1 if f1 is not None else 0,
+    "final_eval/loss": loss if loss is not None else 0
 })
 
 # Finish wandb run
