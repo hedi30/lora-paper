@@ -8,8 +8,32 @@ from peft import LoraConfig, TaskType, get_peft_model
 
 import evaluate
 import numpy as np
+import wandb
 import os
-os.environ["WANDB_DISABLED"] = "true"
+
+from kaggle_secrets import UserSecretsClient
+
+
+user_secrets = UserSecretsClient()
+key = user_secrets.get_secret("wandb_key")
+
+os.environ["WANDB_API_KEY"] = key
+
+# Initialize wandb
+wandb.init(
+    project="lora-roberta-mrpc",
+    name="roberta-base-lora-mrpc",
+    config={
+        "model": "roberta-base",
+        "dataset": "glue-mrpc",
+        "lora_r": 8,
+        "lora_alpha": 8,
+        "learning_rate": 4e-4,
+        "batch_size": 16,
+        "epochs": 30,
+        "target_modules": ["query", "value"]
+    }
+)
 
 raw_datasets = load_dataset("glue", "mrpc")
 checkpoint = "roberta-base"
@@ -53,14 +77,29 @@ lora_config = LoraConfig(
 before_lora_count = count_parameters(model)
 print(f"Before LoRA:\n{before_lora_count}")
 
+# Log parameter counts to wandb
+wandb.log({
+    "parameters/total_before_lora": before_lora_count['Total'],
+    "parameters/trainable_before_lora": before_lora_count['Trainable']
+})
+
 lora_model = get_peft_model(model, lora_config)
 
 after_lora_count = count_parameters(lora_model)
 print(f"After LoRA:\n{after_lora_count}")
 
+# Log LoRA parameter counts and efficiency
+trainable_params_ratio = after_lora_count['Trainable'] / after_lora_count['Total'] * 100
+wandb.log({
+    "parameters/total_after_lora": after_lora_count['Total'],
+    "parameters/trainable_after_lora": after_lora_count['Trainable'],
+    "parameters/trainable_ratio_percent": trainable_params_ratio,
+    "parameters/parameter_reduction": before_lora_count['Trainable'] / after_lora_count['Trainable']
+})
+
 training_args = TrainingArguments(
 "test-trainer",
-    #evaluation_strategy="steps",
+    evaluation_strategy="steps",
     eval_steps=500,
     num_train_epochs=30,
     per_device_train_batch_size=16,
@@ -68,8 +107,10 @@ training_args = TrainingArguments(
     learning_rate=4e-4,
     warmup_ratio=0.06,
     lr_scheduler_type="linear",
-    save_strategy="no"
-
+    save_strategy="no",
+    logging_steps=100,
+    report_to="wandb",
+    run_name="roberta-lora-mrpc"
 )
 
 
@@ -88,3 +129,13 @@ trainer.train()
 
 eval_results = trainer.evaluate()
 print(eval_results)
+
+# Log final evaluation results
+wandb.log({
+    "final_eval/accuracy": eval_results.get("eval_accuracy", 0),
+    "final_eval/f1": eval_results.get("eval_f1", 0),
+    "final_eval/loss": eval_results.get("eval_loss", 0)
+})
+
+# Finish wandb run
+wandb.finish()
