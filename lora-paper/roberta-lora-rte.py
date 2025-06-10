@@ -101,7 +101,6 @@ wandb.log({
 
 training_args = TrainingArguments(
 "rte-trainer",
-    evaluation_strategy="steps",
     eval_steps=500,
     num_train_epochs=80,
     per_device_train_batch_size=32,
